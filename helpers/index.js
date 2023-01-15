@@ -1,3 +1,5 @@
+import fetch from 'node-fetch';
+
 const isUpper = (char) => { 
     const titleArray = char.split(" ")
     const firstWord = titleArray[0]
