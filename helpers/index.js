@@ -14,19 +14,18 @@ const truncateText = (text) => {
 }
 
 const createSlug = (str) => {
-    str = str.replace(/^\s+|\s+$/g, ''); // trim
+    str = str.replace(/^\s+|\s+$/g, '');
     str = str.toLowerCase();
 
-    // remove accents, swap ñ for n, etc
     var from = "ãàáäâáº½èéëêìíïîõòóöôùúüûñç·/_,:;";
     var to   = "aaaaaeeeeeiiiiooooouuuuncn-----";
     for (var i=0, l=from.length ; i<l ; i++) {
          str = str.replace(new RegExp(from.charAt(i), 'g'), to.charAt(i));
     }
 
-    str = str.replace(/[^a-z0-9 -]/g, '') // remove invalid chars
-    .replace(/\s+/g, '-') // collapse whitespace and replace by -
-    .replace(/-+/g, '-'); // collapse dashes
+    str = str.replace(/[^a-z0-9 -]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
 
     return str;
 }
