@@ -62,6 +62,12 @@ const extractDataOfCaption = (caption) => {
     }
 }
 
+export const getCategory = (description) => {
+  const descriptionArr = description.split(" ")
+  const categories = ['#alertard','#alertardnet', '#alertainternacional', '#alertadeportiva', '#alertacuriosa', '#alertasexual']
+  return descriptionArr.find(word => categories.includes(word))
+}
+
 export const getInstagramPosts = async() => {
   const postsRequest = await fetch(`https://graph.facebook.com/v14.0/17841413817530260?fields=media%7Bcaption%2Cmedia_type%2Cmedia_url%2Ctimestamp%2C%20thumbnail_url%7D&access_token=${process.env.INSTAGRAM_ACCESS_TOKEN}`)
   const postsJson = await postsRequest.json()

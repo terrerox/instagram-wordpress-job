@@ -1,5 +1,5 @@
 import { buildClient, LogLevel } from '@datocms/cma-client-node';
-import { getInstagramPosts } from './helpers/index.js'
+import { getInstagramPosts, getCategory } from './helpers/index.js'
 import { config } from 'dotenv';
 config()
 
@@ -17,19 +17,26 @@ const instagramDatocmsJob = async() => {
   const sendToDatoCms = []
   
   for (const instagramPost of instagramPosts) {
+    const category = getCategory(instagramPost.description)
+    if(!category || !instagramPost.title) continue
+
     const isPostInDatoCms = datoCmsRecords.find(record => record.instagram_id === instagramPost.instagram_id)
   
     if(isPostInDatoCms) continue
   
-    sendToDatoCms.push(instagramPost)
+    sendToDatoCms.push({
+      ...instagramPost,
+      category: category.substring(1)
+    })
   }
+
   if (sendToDatoCms.length === 0) return
-  
+
   for (const post of sendToDatoCms) {
     await client.items.create({
       item_type: { type: 'item_type', id: '1161411' },
       ...post
-  })
+    })
   }
 }
 
