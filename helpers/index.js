@@ -68,9 +68,14 @@ export const getCategory = (description) => {
 }
 
 export const getInstagramPosts = async() => {
-  const postsRequest = await fetch(`https://graph.facebook.com/v14.0/17841413817530260?fields=media%7Bcaption%2Cmedia_type%2Cmedia_url%2Ctimestamp%2C%20thumbnail_url%7D&access_token=${process.env.INSTAGRAM_ACCESS_TOKEN}`)
-  const postsJson = await postsRequest.json()
-  const posts = postsJson.media.data.map(post => {
+  let nextPageExist = true, nextPageUrl = '', counter = 0, allPosts = []
+  const DEFAULT_URL = `https://graph.facebook.com/v14.0/17841413817530260?fields=media%7Bcaption%2Cmedia_type%2Cmedia_url%2Ctimestamp%2C%20thumbnail_url%7D&access_token=${process.env.INSTAGRAM_ACCESS_TOKEN}`
+
+  while (nextPageExist) {
+    const postsRequest = await fetch(nextPageUrl || DEFAULT_URL)
+    const postsJson = await postsRequest.json()
+    const postsArray = postsJson.media ? postsJson.media.data : postsJson.data
+    const posts = postsArray.map(post => {
       const { 
         id, 
         caption, 
@@ -88,8 +93,19 @@ export const getInstagramPosts = async() => {
         ...data,
         datetime: convertTimestampToDate(timestamp)
       }
-  })
+    })
 
-  return posts
+    const pagingObject = postsJson.media ? postsJson.media : postsJson
+    nextPageExist = pagingObject.paging.next !== null
+    nextPageUrl = pagingObject.paging.next
+
+    if (counter === 15) nextPageExist = false
+
+    if(nextPageExist) {
+      allPosts.push(...posts)
+      counter++
+    }
+  }
+  return allPosts
 }
   
