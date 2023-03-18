@@ -1,5 +1,8 @@
 import fetch from 'node-fetch';
+import { config } from 'dotenv';
+import { buildClient, LogLevel } from '@datocms/cma-client-node';
 
+config()
 const isUpper = (char) => { 
     const titleArray = char.split(" ")
     const firstWord = titleArray[0]
@@ -61,6 +64,18 @@ const extractDataOfCaption = (caption) => {
     }
 }
 
+export const client = buildClient({
+  apiToken: process.env.DATO_CMS_KEY,
+  logLevel: LogLevel.BASIC,
+});
+
+export const uploadMedia = async(url) => await client.uploads.createFromUrl({
+  // remote URL to upload
+  url,
+  // if you want, you can specify a different base name for the uploaded file
+  skipCreationIfAlreadyExists: true,
+  // be notified about the progress of the operation.
+}) 
 export const getCategory = (description) => {
   const descriptionArr = description.split(" ")
   const categories = ['#alertard','#alertardnet', '#alertainternacional', '#alertadeportiva', '#alertacuriosa', '#alertasexual']
@@ -75,7 +90,7 @@ export const getInstagramPosts = async() => {
     const postsRequest = await fetch(nextPageUrl || DEFAULT_URL)
     const postsJson = await postsRequest.json()
     const postsArray = postsJson.media ? postsJson.media.data : postsJson.data
-    const posts = postsArray.map(post => {
+    const posts = postsArray.map((post) => {
       const { 
         id, 
         caption, 
@@ -87,8 +102,8 @@ export const getInstagramPosts = async() => {
       const data = extractDataOfCaption(caption)
       return {
         instagram_id: id,
-        instagram_media_url: media_url,
-        instagram_thumbnail_url: thumbnail_url,
+        media_url,
+        thumbnail_url,
         media_type,
         ...data,
         datetime: convertTimestampToDate(timestamp)
@@ -99,7 +114,7 @@ export const getInstagramPosts = async() => {
     nextPageExist = pagingObject.paging.next !== null
     nextPageUrl = pagingObject.paging.next
 
-    if (counter === 15) nextPageExist = false
+    if (counter === 5) nextPageExist = false
 
     if(nextPageExist) {
       allPosts.push(...posts)

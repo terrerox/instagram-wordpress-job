@@ -1,14 +1,6 @@
-import { buildClient, LogLevel } from '@datocms/cma-client-node';
-import { getInstagramPosts, getCategory } from './helpers/index.js'
-import { config } from 'dotenv';
-config()
+import { getInstagramPosts, getCategory, client, uploadMedia } from './helpers/index.js'
 
-const instagramDatocmsJob = async() => {
-  const client = buildClient({
-    apiToken: process.env.DATO_CMS_KEY,
-    logLevel: LogLevel.BASIC,
-  });
-  
+const instagramDatocmsJob = async() => {  
   const posts = getInstagramPosts()
   const records = client.items.list();
   
@@ -18,14 +10,21 @@ const instagramDatocmsJob = async() => {
   
   for (const instagramPost of instagramPosts) {
     const category = getCategory(instagramPost.description)
+    const { media_url, thumbnail_url, ...restOfPosts } = instagramPost
+
     if(!category || !instagramPost.title) continue
 
     const isPostInDatoCms = datoCmsRecords.find(record => record.instagram_id === instagramPost.instagram_id)
   
     if(isPostInDatoCms) continue
   
+    const media = media_url ? await uploadMedia(media_url) : null
+    const thumbnail = thumbnail_url ? await uploadMedia(thumbnail_url) : null
+    
     sendToDatoCms.push({
-      ...instagramPost,
+      ...restOfPosts,
+      media_url: media?.url,
+      thumbnail_url: thumbnail?.url,
       category: category.substring(1)
     })
   }
@@ -40,6 +39,7 @@ const instagramDatocmsJob = async() => {
   }
 }
 
+await instagramDatocmsJob()
 // will execute the code per hour
 setInterval(async() => {
   await instagramDatocmsJob()
