@@ -114,7 +114,7 @@ export const getInstagramPosts = async() => {
     nextPageExist = pagingObject.paging.next !== null
     nextPageUrl = pagingObject.paging.next
 
-    if (counter === 5) nextPageExist = false
+    if (counter === 15) nextPageExist = false
 
     if(nextPageExist) {
       allPosts.push(...posts)
