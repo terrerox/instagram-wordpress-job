@@ -1,6 +1,5 @@
 import fetch from 'node-fetch';
 import { config } from 'dotenv';
-import { buildClient, LogLevel } from '@datocms/cma-client-node';
 
 config()
 const isUpper = (char) => { 
@@ -35,12 +34,12 @@ const createSlug = (str) => {
 
 const convertTimestampToDate = (timestamp) => {
     const date = new Date(timestamp);
-    return date.toLocaleString('pt-br', { hour12: true })
+    return date.toLocaleString({ hour12: true })
 }
 
 const extractDataOfCaption = (caption) => {
     if(!caption) return
-    let title = '', description = '', km, preview, slug, counter = 0
+    let title = '', content = '', km, excerpt, slug, counter = 0
 
     const captionArray = caption.split("\n")
     
@@ -52,34 +51,27 @@ const extractDataOfCaption = (caption) => {
         continue
       }
       if(text === '') continue 
-      preview = truncateText(text)
-      description += text + " "
+      excerpt = truncateText(text)
+      content += text + " "
     }
     
     return {
       title,
       slug,
-      description,
-      preview
+      content,
+      excerpt
     }
 }
 
-export const client = buildClient({
-  apiToken: process.env.DATO_CMS_KEY,
-  logLevel: LogLevel.BASIC,
-});
-
-export const uploadMedia = async(url) => await client.uploads.createFromUrl({
-  // remote URL to upload
-  url,
-  // if you want, you can specify a different base name for the uploaded file
-  skipCreationIfAlreadyExists: true,
-  // be notified about the progress of the operation.
-}) 
 export const getCategory = (description) => {
   const descriptionArr = description.split(" ")
   const categories = ['#alertard','#alertardnet', '#alertainternacional', '#alertadeportiva', '#alertacuriosa', '#alertasexual']
   return descriptionArr.find(word => categories.includes(word))
+}
+
+export const getDigitsAfterLastHyphen = (inputString) => {
+  const match = inputString.match(/[^-]+$/);
+  return match ? match[0] : null;
 }
 
 export const getInstagramPosts = async() => {
@@ -95,7 +87,6 @@ export const getInstagramPosts = async() => {
         caption, 
         thumbnail_url,  
         timestamp,
-        media_type,
         media_url
       } = post
       const data = extractDataOfCaption(caption)
@@ -103,12 +94,10 @@ export const getInstagramPosts = async() => {
         instagram_id: id,
         media_url,
         thumbnail_url,
-        media_type,
         ...data,
-        datetime: convertTimestampToDate(timestamp)
+        date: convertTimestampToDate(timestamp)
       }
     })
-
     const pagingObject = postsJson.media ? postsJson.media : postsJson
     nextPageExist = pagingObject.paging.next !== null
     nextPageUrl = pagingObject.paging.next

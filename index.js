@@ -1,47 +1,49 @@
-import { getInstagramPosts, getCategory, client, uploadMedia } from './helpers/index.js'
+import { getInstagramPosts, getCategory, getDigitsAfterLastHyphen } from './helpers/index.js'
+import wordpressService from './services/wordpress.js';
 
-const instagramDatocmsJob = async() => {  
+const instagramToWordpressJob = async() => {  
   const posts = getInstagramPosts()
-  const records = client.items.list();
+  const records = wordpressService.getPostsSlug();
+  const [instagramPosts, wordpressPostsSlug] = await Promise.all([posts, records])
   
-  const [instagramPosts, datoCmsRecords] = await Promise.all([posts, records])
-  
-  const sendToDatoCms = []
+  const sendToWordpress = []
   
   for (const instagramPost of instagramPosts) {
-    const category = getCategory(instagramPost.description)
-    const { media_url, thumbnail_url, ...restOfPosts } = instagramPost
+    const category = getCategory(instagramPost.content)
+    const { media_url, thumbnail_url, slug, instagram_id, ...rest } = instagramPost
 
     if(!category || !instagramPost.title) continue
 
-    const isPostInDatoCms = datoCmsRecords.find(record => record.instagram_id === instagramPost.instagram_id)
-  
-    if(isPostInDatoCms) continue
-  
-    const media = media_url ? await uploadMedia(media_url) : null
-    const thumbnail = thumbnail_url ? await uploadMedia(thumbnail_url) : null
+    const isPostInWordpress = wordpressPostsSlug.find(record => { 
+      const idFromSlug = getDigitsAfterLastHyphen(record.slug)
+      console.log({ idFromSlug, id: instagramPost.instagram_id })
+      return idFromSlug === instagramPost.instagram_id 
+    })
+    console.log(isPostInWordpress)
+    if(isPostInWordpress) continue
     
-    sendToDatoCms.push({
-      ...restOfPosts,
-      media_url: media?.url,
-      thumbnail_url: thumbnail?.url,
-      category: category.substring(1)
+    sendToWordpress.push({
+      ...rest,
+      //media_url: media?.url,
+      slug: `${slug}-${instagram_id}`,
+      status: "PUBLISH",
+      //thumbnail_url: thumbnail?.url,
+      //category: category.substring(1)
     })
   }
+  if (sendToWordpress.length === 0) return
 
-  if (sendToDatoCms.length === 0) return
-
-  for (const post of sendToDatoCms) {
-    await client.items.create({
-      item_type: { type: 'item_type', id: '1161411' },
-      ...post
-    })
+  const authToken = await wordpressService.login()
+  for (const post of sendToWordpress) {
+    console.log(post)
+    await wordpressService.createPost(post, authToken)
+    console.log(`Post with the slug ${post.slug} uploaded to Wordpress`)
   }
 }
 
-await instagramDatocmsJob()
+await instagramToWordpressJob()
 // will execute the code per hour
 setInterval(async() => {
-  await instagramDatocmsJob()
+  await instagramToWordpressJob()
 }, 3600000);
   
