@@ -20,7 +20,7 @@ const instagramDatocmsJob = async() => {
   
     const media = media_url ? await uploadMedia(media_url) : null
     const thumbnail = thumbnail_url ? await uploadMedia(thumbnail_url) : null
-    
+    //coment
     sendToDatoCms.push({
       ...restOfPosts,
       media_url: media?.url,
